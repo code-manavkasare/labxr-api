@@ -1,0 +1,98 @@
+import { IControllerArgs, IUser } from "../types";
+import jwt from "jsonwebtoken";
+import { ValidationError, Model } from "sequelize";
+import User from "../models/user";
+import bcrypt from "bcrypt";
+import config from "../services/config";
+const { JWT_SECRET } = config;
+
+export const create: IControllerArgs = async (req, res) => {
+  try {
+    const data = await req.body;
+    const user: IUser | any = await User.create(data);
+    const token = jwt.sign(user.id, JWT_SECRET);
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+    console.log("token", token);
+    user.token = token;
+    user.password = hashedPassword;
+    await user.save();
+    return res.json({
+      data: {
+        data: user,
+        message: "User created successfully!",
+      },
+      error: null,
+    });
+  } catch (error: any) {
+    if (error instanceof ValidationError) {
+      return res.json({ data: null, error: error.errors[0].message });
+    }
+    return res.json({ data: null, error });
+  }
+};
+
+export const login: IControllerArgs = async (req, res) => {
+  try {
+    const data = await req.body;
+    if (!data.email)
+      return res.json({ data: null, error: "Email cannot be empty" });
+    else if (!data.password)
+      return res.json({ data: null, error: "Password cannot be empty" });
+    const userDoc = await User.findOne({
+      where: {
+        email: data.email,
+      },
+    });
+    const user = userDoc?.get();
+    if (!user)
+      return res.json({ data: null, error: "No user found with this email" });
+    const valid = await bcrypt.compare(data.password, user.password);
+    console.log("valid", valid);
+    if (!valid) return res.json({ data: null, error: "Incorrect Password" });
+
+    return res.json({
+      data: {
+        data: user,
+        message: "User logged in successfully!",
+      },
+      error: null,
+    });
+  } catch (error: any) {
+    if (error instanceof ValidationError) {
+      return res.json({ data: null, error: error.errors[0].message });
+    }
+    return res.json({ data: null, error });
+  }
+};
+
+export const reset: IControllerArgs = async (req, res) => {
+  try {
+    const data = await req.body;
+    if (!data.email)
+      return res.json({ data: null, error: "Email cannot be empty" });
+    else if (!data.token)
+      return res.json({ data: null, error: "Token cannot be empty" });
+    const userDoc = await User.findOne({
+      where: {
+        email: data.email,
+      },
+    });
+    const user = userDoc?.get();
+    if (!user)
+      return res.json({ data: null, error: "No user found with this email" });
+    const valid = user.token === data.token;
+    console.log("valid", valid);
+    if (!valid) return res.json({ data: null, error: "Tokens do not match" });
+    return res.json({
+      data: {
+        message: "You can reset your password",
+      },
+      error: null,
+    });
+  } catch (error: any) {
+    if (error instanceof ValidationError) {
+      return res.json({ data: null, error: error.errors[0].message });
+    }
+    return res.json({ data: null, error });
+  }
+};
