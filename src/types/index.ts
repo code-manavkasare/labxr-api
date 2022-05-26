@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 
 export interface IConfig {
   PORT: string;
@@ -19,5 +19,9 @@ export interface IUser {
 }
 
 export interface IControllerArgs {
-  (req: Request, res: Response): any;
+  (
+    req: Request<any, any, any, any, Record<string, any>> | any,
+    res: Response<any, any>,
+    next: NextFunction
+  ): any;
 }

@@ -65,13 +65,11 @@ export const login: IControllerArgs = async (req, res) => {
   }
 };
 
-export const reset: IControllerArgs = async (req, res) => {
+export const forgot: IControllerArgs = async (req, res) => {
   try {
     const data = await req.body;
     if (!data.email)
       return res.json({ data: null, error: "Email cannot be empty" });
-    else if (!data.token)
-      return res.json({ data: null, error: "Token cannot be empty" });
     const userDoc = await User.findOne({
       where: {
         email: data.email,
@@ -80,9 +78,6 @@ export const reset: IControllerArgs = async (req, res) => {
     const user = userDoc?.get();
     if (!user)
       return res.json({ data: null, error: "No user found with this email" });
-    const valid = user.token === data.token;
-    console.log("valid", valid);
-    if (!valid) return res.json({ data: null, error: "Tokens do not match" });
     return res.json({
       data: {
         message: "You can reset your password",
@@ -90,6 +85,53 @@ export const reset: IControllerArgs = async (req, res) => {
       error: null,
     });
   } catch (error: any) {
+    if (error instanceof ValidationError) {
+      return res.json({ data: null, error: error.errors[0].message });
+    }
+    return res.json({ data: null, error });
+  }
+};
+
+export const reset: IControllerArgs = async (req, res) => {
+  try {
+    const data = await req.body;
+    if (!data.email)
+      return res.json({ data: null, error: "Email cannot be empty" });
+    else if (!data.password)
+      return res.json({ data: null, error: "Password cannot be empty" });
+    const userDoc = await User.findOne({
+      where: {
+        email: data.email,
+      },
+    });
+    const user = userDoc?.get();
+    if (!user)
+      return res.json({ data: null, error: "No user found with this email" });
+    const isSame = await bcrypt.compare(data.password, user.password);
+    if (isSame)
+      return res.json({
+        data: null,
+        error: "Please choose a different password than current one",
+      });
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+    await User.update(
+      {
+        password: hashedPassword,
+      },
+      {
+        where: {
+          id: user.id,
+        },
+      }
+    );
+    return res.json({
+      data: {
+        message: "Password reset successfully!",
+      },
+      error: null,
+    });
+  } catch (error: any) {
+    console.log("error reseting password", error);
     if (error instanceof ValidationError) {
       return res.json({ data: null, error: error.errors[0].message });
     }
