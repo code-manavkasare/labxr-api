@@ -11,16 +11,6 @@ export const create: IControllerArgs = async (req, res) => {
     const data = await req.body;
     if (!data.email)
       return res.json({ data: null, error: "Email cannot be empty" });
-    const userExists = await User.findOne({
-      where: {
-        email: data.email,
-      },
-    });
-    if (!userExists)
-      return res.json({
-        data: null,
-        error: "User with this email already exists!",
-      });
     const user: IUser | any = await User.create(data);
     const token = jwt.sign(user.id, JWT_SECRET);
     const hashedPassword = await bcrypt.hash(data.password, 10);

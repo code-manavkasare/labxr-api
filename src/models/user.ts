@@ -48,6 +48,7 @@ const User = sequelize.define("user", {
   email: {
     type: STRING,
     allowNull: false,
+    unique: true,
     validate: {
       notNull: {
         msg: "First name cannot be empty",
