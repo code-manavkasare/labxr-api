@@ -1,6 +1,6 @@
 # Documentation/Examples
 
-Base Url: 
+Base Url: http://64.227.169.229:5000
 
 ### Endpoint: /user/signup (POST)
 
@@ -98,6 +98,7 @@ Error: {
     "error": "Invalid token!"
 }
 ```
+
 ### Endpoint: /user/reset (POST)
 
 ```
