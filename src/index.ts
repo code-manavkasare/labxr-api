@@ -1,13 +1,14 @@
 import "dotenv/config";
 import express from "express";
-import config from "./services/config";
 import user from "./routes/user";
-import sequelize from "./services/sequelize";
+import config from "./services/config";
 
 const { PORT } = config;
 const app = express();
 
 app.use(express.json());
+
+app.get("/", (req, res) => res.send("Hi"));
 
 app.use("/user", user);
 
